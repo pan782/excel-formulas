@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Excel Formulas</title>
+  <style>
+    :root {
+      --green: #107c41;
+      --green-dark: #0b5c2f;
+      --bg: #f5f7fa;
+      --card: #ffffff;
+      --text: #1f2328;
+      --muted: #57606a;
+      --border: #e1e4e8;
+      --code-bg: #f0f4f8;
+    }
+    * { box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      margin: 0;
+      padding: 14px;
+      background: var(--bg);
+      color: var(--text);
+      -webkit-tap-highlight-color: transparent;
+    }
+    header {
+      background: linear-gradient(135deg, var(--green), var(--green-dark));
+      color: #fff;
+      padding: 16px;
+      border-radius: 14px;
+      margin-bottom: 12px;
+    }
+    header h1 { margin: 0 0 4px; font-size: 20px; }
+    header p { margin: 0; font-size: 13px; opacity: 0.9; }
+    .search-wrap { position: sticky; top: 8px; z-index: 10; margin-bottom: 10px; }
+    input[type="search"] {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      font-size: 15px;
+      background: var(--card);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      outline: none;
+    }
+    input[type="search"]:focus { border-color: var(--green); }
+    .chips {
+      display: flex;
+      gap: 8px;
+      overflow-x: auto;
+      padding-bottom: 8px;
+      margin-bottom: 8px;
+      scrollbar-width: none;
+    }
+    .chips::-webkit-scrollbar { display: none; }
+    .chip {
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: var(--muted);
+      padding: 7px 13px;
+      border-radius: 999px;
+      font-size: 13px;
+      font-weight: 500;
+      white-space: nowrap;
+      cursor: pointer;
+    }
+    .chip.active {
+      background: var(--green);
+      color: #fff;
+      border-color: var(--green);
+    }
+    .count { font-size: 12px; color: var(--muted); margin: 0 2px 10px; }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px;
+      margin-bottom: 10px;
+    }
+    .card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 8px;
+    }
+    .name { font-weight: 700; color: var(--green); font-size: 16px; }
+    .badge {
+      font-size: 11px;
+      background: #e6f4ea;
+      color: var(--green-dark);
+      padding: 3px 8px;
+      border-radius: 999px;
+      font-weight: 600;
+    }
+    .syntax-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 8px 0;
+    }
+    .syntax {
+      flex: 1;
+      font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+      background: var(--code-bg);
+      padding: 8px 10px;
+      border-radius: 8px;
+      font-size: 12.5px;
+      overflow-x: auto;
+      white-space: nowrap;
+    }
+    .copy-btn {
+      border: 1px solid var(--border);
+      background: var(--card);
+      color: var(--text);
+      border-radius: 8px;
+      padding: 7px 10px;
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .desc { font-size: 13.5px; color: var(--muted); margin: 0 0 6px; line-height: 1.4; }
+    .example {
+      font-size: 12.5px;
+      background: #fafafa;
+      border-left: 3px solid var(--green);
+      padding: 6px 9px;
+      border-radius: 0 6px 6px 0;
+      color: var(--text);
+    }
+    .example code { font-family: ui-monospace, monospace; color: var(--green-dark); }
+    .empty { text-align: center; color: var(--muted); padding: 32px 16px; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Excel Formulas</h1>
+    <p>Offline quick reference with syntax &amp; real examples</p>
+  </header>
+
+  <div class="search-wrap">
+    <input type="search" id="q" placeholder="Search formula (e.g. XLOOKUP, SUMIFS, date)..." oninput="render()" />
+  </div>
+
+  <div class="chips" id="chips"></div>
+  <p class="count" id="count"></p>
+  <div id="list"></div>
+
+  <script>
+    const FORMULAS = [
+      { name: "SUM", cat: "Math", syntax: "=SUM(number1, [number2], ...)", desc: "Adds all numbers in a cell range or list.", ex: "=SUM(B2:B10)", res: "Totals values in B2 through B10" },
+      { name: "SUMIF", cat: "Math", syntax: "=SUMIF(range, criteria, [sum_range])", desc: "Sums cells that match a single condition.", ex: '=SUMIF(A2:A10, "Apples", B2:B10)', res: "Totals B2:B10 where A2:A10 is Apples" },
+      { name: "SUMIFS", cat: "Math", syntax: "=SUMIFS(sum_range, criteria_range1, criteria1, ...)", desc: "Sums cells that meet multiple conditions.", ex: '=SUMIFS(C2:C20, A2:A20, "East", B2:B20, ">100")', res: "Totals East sales over 100" },
+      { name: "ROUND", cat: "Math", syntax: "=ROUND(number, num_digits)", desc: "Rounds a number to a specified number of digits.", ex: "=ROUND(12.3456, 2)", res: "12.35" },
+      { name: "SUBTOTAL", cat: "Math", syntax: "=SUBTOTAL(function_num, ref1, ...)", desc: "Calculates a sum, average, or count ignoring hidden/filtered rows.", ex: "=SUBTOTAL(9, B2:B50)", res: "Sum of visible cells in B2:B50" },
+
+      { name: "XLOOKUP", cat: "Lookup", syntax: "=XLOOKUP(lookup_value, lookup_array, return_array, [if_not_found])", desc: "Modern replacement for VLOOKUP; searches any column or row and returns a match.", ex: '=XLOOKUP(E2, A2:A50, C2:C50, "Not Found")', res: "Finds E2 in A2:A50, returns C2:C50" },
+      { name: "VLOOKUP", cat: "Lookup", syntax: "=VLOOKUP(lookup_value, table_array, col_index_num, [range_lookup])", desc: "Looks up a value in the first column and returns a value from a column to the right.", ex: "=VLOOKUP(E2, A2:D50, 3, FALSE)", res: "Exact match from 3rd column" },
+      { name: "INDEX", cat: "Lookup", syntax: "=INDEX(array, row_num, [column_num])", desc: "Returns the value at a given row and column position in a range.", ex: "=INDEX(B2:B20, 4)", res: "Returns 4th item in B2:B20" },
+      { name: "MATCH", cat: "Lookup", syntax: "=MATCH(lookup_value, lookup_array, [match_type])", desc: "Returns the relative position of an item in a range.", ex: '=MATCH("Laptop", A2:A20, 0)', res: "Exact row position of Laptop" },
+      { name: "FILTER", cat: "Lookup", syntax: "=FILTER(array, include, [if_empty])", desc: "Dynamically returns all rows matching a condition (Excel 365/2021+).", ex: '=FILTER(A2:C20, B2:B20="Paid", "None")', res: "Lists all Paid rows" },
+
+      { name: "IF", cat: "Logical", syntax: "=IF(logical_test, value_if_true, [value_if_false])", desc: "Returns one value if a condition is true and another if false.", ex: '=IF(B2>=50, "Pass", "Fail")', res: "Pass if B2 is 50 or more" },
+      { name: "IFS", cat: "Logical", syntax: "=IFS(test1, value1, [test2, value2], ...)", desc: "Checks multiple conditions in order without nesting IFs.", ex: '=IFS(A2>=90,"A", A2>=80,"B", TRUE,"C")', res: "Assigns letter grade" },
+      { name: "AND", cat: "Logical", syntax: "=AND(logical1, [logical2], ...)", desc: "Returns TRUE only if every condition is true.", ex: "=AND(A2>0, B2<100)", res: "TRUE when both checks pass" },
+      { name: "OR", cat: "Logical", syntax: "=OR(logical1, [logical2], ...)", desc: "Returns TRUE if at least one condition is true.", ex: '=OR(A2="VIP", B2>500)', res: "TRUE if VIP or spend > 500" },
+      { name: "IFERROR", cat: "Logical", syntax: "=IFERROR(value, value_if_error)", desc: "Catches formula errors like #DIV/0! or #N/A and shows a fallback.", ex: "=IFERROR(A2/B2, 0)", res: "Returns 0 if B2 is 0" },
+
+      { name: "TEXTJOIN", cat: "Text", syntax: "=TEXTJOIN(delimiter, ignore_empty, text1, ...)", desc: "Joins text from multiple cells with a separator, skipping blanks.", ex: '=TEXTJOIN(", ", TRUE, A2:A5)', res: "Alice, Bob, Charlie" },
+      { name: "CONCAT", cat: "Text", syntax: "=CONCAT(text1, [text2], ...)", desc: "Combines text from multiple ranges or strings.", ex: '=CONCAT(A2, " ", B2)', res: "First + space + Last name" },
+      { name: "LEFT / RIGHT", cat: "Text", syntax: "=LEFT(text, [num_chars])", desc: "Extracts characters from the start (LEFT) or end (RIGHT) of text.", ex: "=LEFT(A2, 3)", res: "First 3 characters of A2" },
+      { name: "MID", cat: "Text", syntax: "=MID(text, start_num, num_chars)", desc: "Extracts characters from the middle of a text string.", ex: "=MID(A2, 4, 2)", res: "2 chars starting at position 4" },
+      { name: "TRIM", cat: "Text", syntax: "=TRIM(text)", desc: "Removes extra leading, trailing, and duplicate spaces.", ex: "=TRIM(A2)", res: "Cleans messy spacing" },
+
+      { name: "TODAY", cat: "Date & Time", syntax: "=TODAY()", desc: "Returns the current date (updates automatically).", ex: "=TODAY()+7", res: "Date 7 days from today" },
+      { name: "DATEDIF", cat: "Date & Time", syntax: '=DATEDIF(start_date, end_date, "unit")', desc: 'Calculates days ("D"), months ("M"), or years ("Y") between two dates.', ex: '=DATEDIF(A2, TODAY(), "Y")', res: "Full years since date in A2" },
+      { name: "EOMONTH", cat: "Date & Time", syntax: "=EOMONTH(start_date, months)", desc: "Returns the last day of the month, offset by a number of months.", ex: "=EOMONTH(TODAY(), 0)", res: "Last day of current month" },
+      { name: "NETWORKDAYS", cat: "Date & Time", syntax: "=NETWORKDAYS(start_date, end_date, [holidays])", desc: "Counts working weekdays (Mon–Fri) between two dates.", ex: "=NETWORKDAYS(A2, B2)", res: "Business days between A2 and B2" },
+
+      { name: "AVERAGE", cat: "Stats", syntax: "=AVERAGE(number1, [number2], ...)", desc: "Calculates the arithmetic mean of numbers in a range.", ex: "=AVERAGE(B2:B20)", res: "Mean of B2:B20" },
+      { name: "COUNT", cat: "Stats", syntax: "=COUNT(value1, [value2], ...)", desc: "Counts cells that contain numbers (use COUNTA for non-empty cells).", ex: "=COUNT(B2:B20)", res: "Count of numeric cells" },
+      { name: "COUNTIF", cat: "Stats", syntax: "=COUNTIF(range, criteria)", desc: "Counts cells within a range that meet one condition.", ex: '=COUNTIF(A2:A20, "Done")', res: "Number of Done items" },
+      { name: "MIN / MAX", cat: "Stats", syntax: "=MAX(number1, [number2], ...)", desc: "Returns the smallest (MIN) or largest (MAX) number in a range.", ex: "=MAX(B2:B20)", res: "Highest value in B2:B20" }
+    ];
+
+    const CATS = ["All", "Math", "Lookup", "Logical", "Text", "Date & Time", "Stats"];
+    let activeCat = "All";
+
+    function renderChips() {
+      const wrap = document.getElementById("chips");
+      wrap.innerHTML = CATS.map(c =>
+        `<button class="chip ${c === activeCat ? 'active' : ''}" onclick="setCat('${c}')">${c}</button>`
+      ).join("");
+    }
+
+    function setCat(c) {
+      activeCat = c;
+      renderChips();
+      render();
+    }
+
+    function copyText(btn, text) {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text);
+      } else {
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+      }
+      const orig = btn.textContent;
+      btn.textContent = "Copied!";
+      setTimeout(() => { btn.textContent = orig; }, 1200);
+    }
+
+    function render() {
+      const q = document.getElementById("q").value.trim().toLowerCase();
+      const filtered = FORMULAS.filter(f => {
+        const catOk = activeCat === "All" || f.cat === activeCat;
+        const textOk = !q || (f.name + " " + f.cat + " " + f.syntax + " " + f.desc + " " + f.ex).toLowerCase().includes(q);
+        return catOk && textOk;
+      });
+      document.getElementById("count").textContent = `${filtered.length} formula${filtered.length === 1 ? "" : "s"} shown`;
+      const list = document.getElementById("list");
+      if (!filtered.length) {
+        list.innerHTML = `<div class="empty">No formulas matched "${q}". Try another keyword.</div>`;
+        return;
+      }
+      list.innerHTML = filtered.map(f => {
+        const safeSyntax = f.syntax.replace(/'/g, "&#39;").replace(/"/g, "&quot;");
+        return `
+          <div class="card">
+            <div class="card-top">
+              <span class="name">${f.name}</span>
+              <span class="badge">${f.cat}</span>
+            </div>
+            <div class="syntax-row">
+              <div class="syntax">${f.syntax}</div>
+              <button class="copy-btn" onclick="copyText(this, '${safeSyntax}')">Copy</button>
+            </div>
+            <p class="desc">${f.desc}</p>
+            <div class="example"><strong>Example:</strong> <code>${f.ex}</code> — ${f.res}</div>
+          </div>
+        `;
+      }).join("");
+    }
+
+    renderChips();
+    render();
+  </script>
+</body>
+</html>
