@@ -1,0 +1,66 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Arrange Android folders
+        run: |
+          mkdir -p app/src/main/java/app/excelformulas app/src/main/res/values app/src/main/res/mipmap-xxxhdpi app/src/main/assets
+          cp AndroidManifest.xml app/src/main/AndroidManifest.xml
+          cp MainActivity.java app/src/main/java/app/excelformulas/MainActivity.java
+          cp styles.xml app/src/main/res/values/styles.xml
+          cp ic_launcher.png app/src/main/res/mipmap-xxxhdpi/ic_launcher.png
+          cp index.html app/src/main/assets/index.html
+
+          cat << 'EOF' > settings.gradle
+          pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }
+          dependencyResolutionManagement { repositoriesMode.set(RepositoriesMode.FAIL_ON_PROJECT_REPOS); repositories { google(); mavenCentral() } }
+          rootProject.name = "ExcelFormulas"
+          include ':app'
+          EOF
+
+          echo "plugins { id 'com.android.application' version '8.5.2' apply false }" > build.gradle
+          printf "org.gradle.jvmargs=-Xmx2048m -Dfile.encoding=UTF-8\nandroid.nonTransitiveRClass=true\n" > gradle.properties
+
+          cat << 'EOF' > app/build.gradle
+          plugins { id 'com.android.application' }
+          android {
+              namespace 'app.excelformulas'
+              compileSdk 34
+              defaultConfig {
+                  applicationId 'app.excelformulas'
+                  minSdk 29
+                  targetSdk 34
+                  versionCode 3
+                  versionName '1.3'
+              }
+              buildTypes { release { minifyEnabled false } }
+              compileOptions { sourceCompatibility JavaVersion.VERSION_17; targetCompatibility JavaVersion.VERSION_17 }
+          }
+          EOF
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.7'
+
+      - name: Build Debug APK
+        run: gradle assembleDebug
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: excel-formulas-apk
+          path: app/build/outputs/apk/debug/app-debug.apk
+          
